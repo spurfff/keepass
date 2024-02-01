@@ -88,7 +88,6 @@ server {
 
 	ssl_certificate_key $nginx_key;
 	ssl_certificate $nginx_crt;
-	include /etc/nginx/ssl.conf;
 
 	location / {
 		auth_basic $auth_basic;
