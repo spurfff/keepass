@@ -56,10 +56,15 @@ if [[ ! -f $htpasswd_file ]]; then
 	sudo htpasswd -c $htpasswd_file $USER
 fi
 
-# Create an empty .kdbx file
-kdbx_file="$database_dir/password_database.kdbx"
-sudo touch $kdbx_file
-sudo chown www-data:www-data $database_dir && sudo chmod 2770 $database_dir
+# move the sample .kdbx file to the database directory 
+kdbx_file="sample.kdbx"
+if [[ -f ./$kdbx_file && ! -f $database_dir/$kdbx_file ]]; then
+	sudo mv ./$kdbx_file $database_dir
+else
+	echo -e "The sample database file cannot be located...\n"
+	sleep 1
+fi
+sudo chown -R www-data:www-data $database_dir && sudo chmod 2770 $database_dir
 
 server_port=443
 server_name="keepass"
