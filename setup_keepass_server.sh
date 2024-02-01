@@ -17,23 +17,29 @@ if [[ -d /etc/nginx ]]; then
 	if [[ ! -d /etc/nginx/ssl ]]; then
 		sudo mkdir /etc/nginx/ssl
 	fi
-	if [[ ! -d $HOME/secure_html ]]; then
-		mkdir $HOME/secure_html
+	if [[ ! -d $HOME/database_dir ]]; then
+		mkdir $HOME/database_dir
 	fi
 fi
 
 ssl_dir="/etc/nginx/ssl"
 config_dir="/etc/nginx"
+root_dir="/var/www/keepass"
 # Below: the default server block file for nginx
-srv_blk_file="default"
+srv_blk_fileName="default"
 srv_blk_dir="/etc/nginx/sites-available"
-srv_blk_fullpath="${srv_blk_dir}/${srv_blk_file}"
+srv_blk_file="${srv_blk_dir}/${srv_blk_fileName}"
 # Below: The directory to contain our .kdbx files for later serving
-secure_html="$HOME/secure_html"
+database_dir="$root_dir/database_files"
+
+# Create the root directory if it does not already exist
+if [[ ! -d $root_dir ]]; then
+	sudo mkdir $root_dir
+fi
 
 # Create a backup of the OG server block configuratuion file
-if [[ ! -f $srv_blk_fullpath.bak ]]; then
-	sudo cp $srv_blk_fullpath $srv_blk_fullpath.bak 
+if [[ ! -f $srv_blk_file.bak ]]; then
+	sudo cp $srv_blk_file $srv_blk_file.bak 
 fi
 
 # Make a super boring ssl self-signed cert
@@ -51,28 +57,42 @@ if [[ ! -f $htpasswd_file ]]; then
 fi
 
 # Create an empty .kdbx file
-kdbx_file="$secure_html/password_database.kdbx"
+kdbx_file="$database_dir/password_database.kdbx"
 sudo touch $kdbx_file
-sudo chown www-data:www-data $secure_html && sudo chmod 2770 $secure_html
+sudo chown www-data:www-data $database_dir && sudo chmod 2770 $database_dir
+
+server_port=443
+server_name="keepass"
+access_log="/var/log/nginx/keepass.access.log"
+auth_basic="keepass"
+
 
 # Modify the nginx config file to get started
-sudo tee "$srv_blk_fullpath" > /dev/null <<EOF
+sudo tee "$srv_blk_file" > /dev/null <<EOF
 server {
+	listen 80;
+	server_name $server_name;
+	access_log off;
 
-	listen 443 ssl default_server;
-	server_name wired.net;
-	
-	access_log /var/log/nginx/access.log;
-	root $secure_html;
+	# Redirects http to https
+	return 302 https://$http_host$request_uri;
+}
 
-	ssl_certificate $nginx_crt;
+server {
+	listen $server_port ssl;
+	server_name $server_name;
+	access_log $access_log;
+	root $root_dir;
+
 	ssl_certificate_key $nginx_key;
+	ssl_certificate $nginx_crt;
+	include /etc/nginx/ssl.conf;
 
 	location / {
-		auth_basic "Restricted";
-		auth_basic_user_file "$htpasswd_file";
-
-		dav_methods PUT DELETE MOVE COPY;
+		auth_basic $auth_basic;
+		auth_basic_user_file $htpasswd_file;
+		
+		dav_methods PUT DELETE MOVE;
 		dav_access group:rw all:r;
 	}
 }
