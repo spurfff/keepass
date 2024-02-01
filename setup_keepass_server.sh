@@ -27,7 +27,6 @@ srv_blk_fileName="default"
 srv_blk_dir="/etc/nginx/sites-available"
 srv_blk_file="${srv_blk_dir}/${srv_blk_fileName}"
 # Below: The directory to contain our .kdbx files for later serving
-database_dir="$root_dir/database_files"
 
 # Create the root directory if it does not already exist
 if [[ ! -d $root_dir ]]; then
@@ -56,12 +55,11 @@ fi
 # move the sample .kdbx file to the database directory 
 kdbx_file="sample.kdbx"
 if [[ -f ./$kdbx_file && ! -f $database_dir/$kdbx_file ]]; then
-	sudo mv ./$kdbx_file $database_dir
+	sudo cp -a ./$kdbx_file $root_dir
 else
 	echo -e "The sample database file cannot be located...\n"
 	sleep 1
 fi
-sudo chown -R www-data:www-data $database_dir && sudo chmod 2770 $database_dir
 
 server_port=443
 server_name="keepass"
