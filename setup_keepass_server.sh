@@ -1,6 +1,13 @@
 #!/bin/bash
 
-sudo apt update && sudo apt install -y nginx openssl apache2-utils
+sudo apt update
+# Update the apt cache and install necessary files
+applications=( "nginx" "openssl" "apache2-utils" )
+for item in "${applications[@]}"; do
+	if ! dpkg -l | grep -q "^ii\s*$item\s";  then
+		sudo apt-get install -y $item
+	fi
+done
 
 
 
@@ -32,7 +39,7 @@ fi
 # Make a super boring ssl self-signed cert
 nginx_key="$ssl_dir/nginx.key"
 nginx_crt="$ssl_dir/nginx.crt"
-if [[ ! -f $nginx_key && ! -f $nginx ]]; then
+if [[ ! -f $nginx_key && ! -f $nginx_crt ]]; then
 	sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout $nginx_key -out $nginx_crt
 fi
 
@@ -48,6 +55,7 @@ kdbx_file="$secure_html/password_database.kdbx"
 sudo touch $kdbx_file
 sudo chown www-data:www-data $secure_html && sudo chmod 2770 $secure_html
 
+# Modify the nginx config file to get started
 sudo tee "$srv_blk_fullpath" > /dev/null <<EOF
 server {
 
@@ -70,4 +78,5 @@ server {
 }
 EOF
 
+# Restart the server for changes to take effect
 sudo systemctl restart nginx.service
