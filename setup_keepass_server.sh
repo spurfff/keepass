@@ -26,27 +26,29 @@ secure_html="$HOME/secure_html"
 
 # Create a backup of the OG server block configuratuion file
 if [[ ! -f $srv_blk_fullpath.bak ]]; then
-	cp $srv_blk_fullpath $srv_blk_fullpath.bak 
+	sudo cp $srv_blk_fullpath $srv_blk_fullpath.bak 
 fi
 
 # Make a super boring ssl self-signed cert
 nginx_key="$ssl_dir/nginx.key"
 nginx_crt="$ssl_dir/nginx.crt"
-if [[ ! -f $niginx_key && ! -f $nginx ]]; then
+if [[ ! -f $nginx_key && ! -f $nginx ]]; then
 	sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout $nginx_key -out $nginx_crt
 fi
 
 # Create a new password protected authentication file for the server
 # this can be done using the htpasswd binary from the apache2-utils package
 htpasswd_file="$config_dir/htpasswd"
-sudo htpasswd -c $htpasswd_file $USER
+if [[ ! -f $htpasswd_file ]]; then
+	sudo htpasswd -c $htpasswd_file $USER
+fi
 
 # Create an empty .kdbx file
 kdbx_file="$secure_html/password_database.kdbx"
-touch $kdbx_file
-sudo chown www-data:www-data $secure_html && sudo chown :www-data $secure_html/* && sudo chmod 2770 $secure_html
+sudo touch $kdbx_file
+sudo chown www-data:www-data $secure_html && sudo chmod 2770 $secure_html
 
-cat <<EOF > "$srv_blk_fullpath"
+sudo tee "$srv_blk_fullpath" > /dev/null <<EOF
 server {
 
 	listen 443 ssl default_server;
@@ -55,8 +57,8 @@ server {
 	access_log /var/log/nginx/access.log;
 	root $secure_html;
 
-	ssl_certificate $nginx_crt
-	ssl_certificate_key $nginx_key
+	ssl_certificate $nginx_crt;
+	ssl_certificate_key $nginx_key;
 
 	location / {
 		auth_basic "Restricted";
