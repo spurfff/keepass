@@ -17,9 +17,6 @@ if [[ -d /etc/nginx ]]; then
 	if [[ ! -d /etc/nginx/ssl ]]; then
 		sudo mkdir /etc/nginx/ssl
 	fi
-	if [[ ! -d $HOME/database_dir ]]; then
-		mkdir $HOME/database_dir
-	fi
 fi
 
 ssl_dir="/etc/nginx/ssl"
