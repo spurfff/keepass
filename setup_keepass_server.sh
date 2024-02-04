@@ -1,5 +1,40 @@
 #!/bin/bash
 
+
+
+# Check which user is running the script
+# IMPORTANT: the running user will own the htpassword file
+
+green='\033[0;32m'
+reset='\033[0m'
+
+function check_current_user {
+	local current_user="${green}$USER${reset}"
+	echo -e "Currently running Script as user: ${green}$USER${reset}...\n"
+	sleep 1
+	while true; do
+
+		echo -e -n "Continue as: $current_user ? [Y/N]: "
+		read -e answer
+		case "$answer" in
+			[Yy]|[Yy][Ee][Ss])
+				echo -e "Continuing as $current_user...\n"	
+				sleep 1
+				break
+				;;
+			[Nn]|[Nn][Oo])
+				echo -e "Aborting the script..."
+				sleep 1
+				exit 0
+				;;
+			*)
+				echo -e "Invalid option...Please try again..."
+				sleep 1
+				;;
+		esac
+	done
+}
+check_current_user
 sudo apt update
 # Update the apt cache and install necessary files
 applications=( "nginx" "openssl" "apache2-utils" )
