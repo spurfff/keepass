@@ -8,6 +8,7 @@
 green='\033[0;32m'
 reset='\033[0m'
 
+# Check that user understands who they're running as before proceeding
 function check_current_user {
 	local current_user="${green}$USER${reset}"
 	echo -e "Currently running Script as user: ${green}$USER${reset}...\n"
@@ -34,7 +35,9 @@ function check_current_user {
 		esac
 	done
 }
+# Run the function
 check_current_user
+
 sudo apt update
 # Update the apt cache and install necessary files
 applications=( "nginx" "openssl" "apache2-utils" )
@@ -61,7 +64,9 @@ root_dir="/var/www/keepass"
 srv_blk_fileName="default"
 srv_blk_dir="/etc/nginx/sites-available"
 srv_blk_file="${srv_blk_dir}/${srv_blk_fileName}"
-# Below: The directory to contain our .kdbx files for later serving
+# Below: The name of the sample .kdbx file
+# Bare min. needed for testing first time client connections
+kdbx_file="sample.kdbx"
 
 # Create the root directory if it does not already exist
 if [[ ! -d $root_dir ]]; then
@@ -88,7 +93,6 @@ if [[ ! -f $htpasswd_file ]]; then
 fi
 
 # move the sample .kdbx file to the database directory 
-kdbx_file="sample.kdbx"
 if [[ -f ./$kdbx_file && ! -f $database_dir/$kdbx_file ]]; then
 	sudo cp -a ./$kdbx_file $root_dir
 else
@@ -134,3 +138,13 @@ EOF
 
 # Restart the server for changes to take effect
 sudo systemctl restart nginx.service
+
+# Overkill-it with organization by creating a management directory
+# This directory will contain links to important files and dirs
+# Purpose: Administration
+mgmt_dir="$HOME/KeePass"
+mkdir $mgmt_dir
+ln -s /etc/nginx/ssl/* $mgmt_dir
+ln -s $root_dir $mgmt_dir/root_dir
+ln -s $srv_blk_file $mgmt_dir/server_block_file
+ln -s $htpasswd_file $mgmt_dir/htpasswd_file
